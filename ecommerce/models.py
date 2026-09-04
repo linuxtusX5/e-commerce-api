@@ -79,3 +79,29 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
+
+# =========================================================
+# Password Reset Token
+# =========================================================
+
+class PasswordResetToken(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    email = models.EmailField(
+        unique=True,
+        db_index=True
+    )
+
+    token = models.CharField(
+        max_length=255,
+        unique=True
+    )
+
+    expires = models.DateTimeField()
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return self.email

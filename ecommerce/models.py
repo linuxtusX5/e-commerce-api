@@ -296,3 +296,39 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id}"
+
+
+# =========================================================
+# Order Item
+# =========================================================
+
+class OrderItem(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="order_items"
+    )
+
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.SET_NULL,
+        related_name="order_items",
+        blank=True,
+        null=True
+    )
+
+    quantity = models.IntegerField()
+
+    price = models.FloatField()
+
+    def __str__(self):
+        return f"{self.product.name} x {self.quantity}"
+

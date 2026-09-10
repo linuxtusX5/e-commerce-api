@@ -547,3 +547,43 @@ class Coupon(models.Model):
     def __str__(self):
         return self.code
 
+
+# =========================================================
+# Cart Item
+# =========================================================
+
+class CartItem(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    quantity = models.IntegerField()
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="cart_items"
+    )
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="cart_items"
+    )
+
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.SET_NULL,
+        related_name="cart_items",
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "product", "variant"],
+                name="unique_user_product_variant_cart"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.user.email} - {self.product.name}"

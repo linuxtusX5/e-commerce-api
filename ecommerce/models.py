@@ -491,3 +491,59 @@ class Review(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.rating}/5"
 
+
+# =========================================================
+# Coupon
+# =========================================================
+
+class Coupon(models.Model):
+
+    class CouponType(models.TextChoices):
+        PERCENTAGE = "PERCENTAGE", "Percentage"
+        FIXED = "FIXED", "Fixed"
+
+    id = models.BigAutoField(primary_key=True)
+
+    code = models.CharField(
+        max_length=100,
+        unique=True
+    )
+
+    type = models.CharField(
+        max_length=20,
+        choices=CouponType.choices,
+        default=CouponType.PERCENTAGE
+    )
+
+    value = models.FloatField()
+
+    min_order = models.FloatField(
+        blank=True,
+        null=True
+    )
+
+    max_uses = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    used_count = models.IntegerField(
+        default=0
+    )
+
+    expires_at = models.DateTimeField(
+        blank=True,
+        null=True
+    )
+
+    active = models.BooleanField(
+        default=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return self.code
+

@@ -442,3 +442,52 @@ class Address(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.label}"
 
+
+# =========================================================
+# Review
+# =========================================================
+
+class Review(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="reviews"
+    )
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="reviews"
+    )
+
+    rating = models.IntegerField()
+
+    title = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True
+    )
+
+    body = models.TextField()
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "product"],
+                name="unique_user_product_review"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.product.name} - {self.rating}/5"
+

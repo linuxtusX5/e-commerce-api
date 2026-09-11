@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Category
 
 class UserSerializer(serializers.ModelSerializer):
     order_count = serializers.SerializerMethodField()
@@ -37,3 +37,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    products_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'slug', 'image', 'products_count']
+        read_only_fields = ['id', 'products_count']
+
+    def get_products_count(self, obj):
+        return obj.products.count()

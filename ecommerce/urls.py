@@ -4,6 +4,7 @@ from . import views
 
 router = DefaultRouter()
 router.register(r'categories', views.CategoryViewSet)
+router.register(r'products', views.ProductViewSet)
 
 urlpatterns = [
     path('auth/register/', views.register_user, name='register'),

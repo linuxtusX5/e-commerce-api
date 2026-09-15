@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Category
+from .models import User, Category, Product
 
 class UserSerializer(serializers.ModelSerializer):
     order_count = serializers.SerializerMethodField()
@@ -49,3 +49,24 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def get_products_count(self, obj):
         return obj.products.count()
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    reviews_count = serializers.SerializerMethodField()
+    in_stock = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'slug', 'description', 'price', 'stock', 'images', 'category', 'category_name', 'reviews_count', 'in_stock', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'category_name', 'reviews_count', 'in_stock', 'created_at', 'updated_at']
+
+    def get_reviews_count(self, obj):
+        return obj.reviews.count()
+    
+    def get_in_stock(self, obj):
+        return obj.stock > 0
+
+

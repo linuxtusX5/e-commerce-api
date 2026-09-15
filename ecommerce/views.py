@@ -2,8 +2,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import viewsets, status, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from .models import User, Category
-from .serializers import UserSerializer, RegisterSerializer, CategorySerializer
+from .models import User, Category, Product
+from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -27,3 +27,16 @@ class CategoryViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["name", "slug"]
     ordering_fields = ['name', 'created_at']
+
+
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.select_related('category').all()
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'description', 'slug', 'category__name']
+    ordering = ['-created_at']
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ProductSerializer
+        return ProductSerializer

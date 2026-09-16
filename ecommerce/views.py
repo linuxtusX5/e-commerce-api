@@ -2,8 +2,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import viewsets, status, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from .models import User, Category, Product
-from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer
+from .models import User, Category, Product, ProductVariant
+from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -40,3 +40,19 @@ class ProductViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return ProductSerializer
         return ProductSerializer
+
+
+class ProductVariantViewSet(viewsets.ModelViewSet):
+    queryset = ProductVariant.objects.select_related('product').all()
+
+    serializer_class = ProductVariantSerializer
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter,]
+
+    filterset_fields = ['product', 'size', 'color',]
+
+    search_fields = ['size', 'color', 'product__name',]
+
+    ordering_fields = ['price', 'stock', 'created_at',]

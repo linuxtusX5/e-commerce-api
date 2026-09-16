@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Category, Product
+from .models import User, Category, Product, ProductVariant
 
 class UserSerializer(serializers.ModelSerializer):
     order_count = serializers.SerializerMethodField()
@@ -66,6 +66,38 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_reviews_count(self, obj):
         return obj.reviews.count()
     
+    def get_in_stock(self, obj):
+        return obj.stock > 0
+
+
+class ProductVariantSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(
+        source="product.name",
+        read_only=True
+    )
+
+    effective_price = serializers.SerializerMethodField()
+    in_stock = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductVariant
+
+        fields = [
+            'id', 'product', 'product_name', 'size', 'color', 'color_hex', 'stock', 'price', 'effective_price', 'in_stock', 'created_at', 'updated_at',
+        ]
+
+        read_only_fields = [
+            'id', 'product_name', 'effective_price', 'in_stock', 'created_at', 'updated_at',
+        ]
+
+    def get_effective_price(self, obj):
+        # Use variant price if available,
+        # otherwise use the product's base price
+        if obj.price is not None:
+            return obj.price
+
+        return obj.product.price
+
     def get_in_stock(self, obj):
         return obj.stock > 0
 

@@ -2,8 +2,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import viewsets, status, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from .models import User, Category, Product, ProductVariant
-from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer
+from .models import User, Category, Product, ProductVariant, Order
+from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -56,3 +56,34 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
     search_fields = ['size', 'color', 'product__name',]
 
     ordering_fields = ['price', 'stock', 'created_at',]
+
+
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.select_related('user','coupon').prefetch_related('order_items__product','order_items__variant').all()
+
+    serializer_class = OrderSerializer
+
+    permission_classes = [IsAuthenticated]
+
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter,]
+
+    filterset_fields = ['status','user','coupon',]
+
+    search_fields = ['payment_id','user__email','user__name',]
+
+    ordering_fields = ['total','status','created_at','updated_at',]
+
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # Admin/staff can see all orders
+        if user.is_staff:
+            return self.queryset
+
+        # Normal users can only see their own orders
+        return self.queryset.filter(user=user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

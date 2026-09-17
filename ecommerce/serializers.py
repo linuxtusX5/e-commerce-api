@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Category, Product, ProductVariant
+from .models import User, Category, Product, ProductVariant, Order, OrderItem
 
 class UserSerializer(serializers.ModelSerializer):
     order_count = serializers.SerializerMethodField()
@@ -102,3 +102,41 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         return obj.stock > 0
 
 
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(
+        source="product.name",
+        read_only=True
+    )
+
+    class Meta:
+        model = OrderItem
+        fields = [
+            'id', 'product', 'product_name', 'variant', 'quantity', 'price',
+        ]
+
+        read_only_fields = [
+            'id', 'product_name',
+        ]
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(
+        source="order_items",
+        many=True,
+        read_only=True
+    )
+
+    user_name = serializers.CharField(
+        source="user.name",
+        read_only=True
+    )
+
+    class Meta:
+        model = Order
+        fields = [
+            'id', 'user', 'user_name', 'total', 'status', 'coupon', 'discount', 'payment_id', 'items', 'created_at', 'updated_at',
+        ]
+
+        read_only_fields = [
+            'id', 'user', 'user_name', 'items', 'created_at', 'updated_at',
+        ]

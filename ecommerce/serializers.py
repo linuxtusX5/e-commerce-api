@@ -115,7 +115,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
         ]
 
         read_only_fields = [
-            'id', 'product_name',
+            'id', 'product_name', 'price',
         ]
 
 
@@ -131,12 +131,66 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    order_items = OrderItemSerializer(
+        many=True,
+        write_only=True,
+        required=True
+    )
+
+
     class Meta:
         model = Order
         fields = [
-            'id', 'user', 'user_name', 'total', 'status', 'coupon', 'discount', 'payment_id', 'items', 'created_at', 'updated_at',
+            'id', 'user', 'user_name', 'total', 'status', 'coupon', 'discount', 'payment_id', 'items', 'order_items', 'created_at', 'updated_at',
         ]
 
         read_only_fields = [
-            'id', 'user', 'user_name', 'items', 'created_at', 'updated_at',
+            'id', 'user', 'user_name', 'total', 'discount', 'payment_id', 'items', 'created_at', 'updated_at',
         ]
+
+
+    def create(self, validated_data):
+        order_items_data = validated_data.pop("order_items")
+
+        user = self.context["request"].user
+        total = 0
+
+        for item_data in order_items_data:
+            product = item_data["product"]
+            variant = item_data.get("variant")
+            quantity = item_data["quantity"]
+
+            # Use variant price if available,
+            # otherwise use product price.
+            if variant and variant.price is not None:
+                price = variant.price
+            else:
+                price = product.price
+
+            total += price * quantity
+
+        order = Order.objects.create(
+            user=user,
+            total=total,
+            **validated_data
+        )
+
+        for item_data in order_items_data:
+            product = item_data["product"]
+            variant = item_data.get("variant")
+            quantity = item_data["quantity"]
+
+            if variant and variant.price is not None:
+                price = variant.price
+            else:
+                price = product.price
+
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                variant=variant,
+                quantity=quantity,
+                price=price
+            )
+
+        return order

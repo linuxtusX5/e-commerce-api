@@ -84,6 +84,3 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         # Normal users can only see their own orders
         return self.queryset.filter(user=user)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)

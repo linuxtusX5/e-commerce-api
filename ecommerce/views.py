@@ -2,8 +2,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import viewsets, status, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from .models import User, Category, Product, ProductVariant, Order
-from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer
+from .models import User, Category, Product, ProductVariant, Order, WishlistItem
+from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer, WishlistItemSerializer
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -84,3 +84,33 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         # Normal users can only see their own orders
         return self.queryset.filter(user=user)
+
+
+class WishlistItemViewSet(viewsets.ModelViewSet):
+    serializer_class = WishlistItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    queryset = WishlistItem.objects.select_related( 'user', 'product' ).all()
+
+    filter_backends = [
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = ['product',]
+
+    search_fields = [ 'product__name', 'product__slug', ]
+
+    ordering_fields = ['created_at',]
+
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return self.queryset.filter(
+            user=self.request.user
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(
+            user=self.request.user
+        )

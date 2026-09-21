@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Category, Product, ProductVariant, Order, OrderItem
+from .models import User, Category, Product, ProductVariant, Order, OrderItem, WishlistItem
 
 class UserSerializer(serializers.ModelSerializer):
     order_count = serializers.SerializerMethodField()
@@ -194,3 +194,32 @@ class OrderSerializer(serializers.ModelSerializer):
             )
 
         return order
+
+
+class WishlistItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField( source='product.name', read_only=True )
+
+    product_price = serializers.DecimalField(
+        source='product.price',
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
+
+    product_image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WishlistItem
+        fields = [
+            'id', 'user', 'product', 'product_name', 'product_price', 'product_image', 'created_at',
+        ]
+
+        read_only_fields = [
+            'id', 'user', 'product_name', 'product_price', 'product_image', 'created_at',
+        ]
+
+    def get_product_image(self, obj):
+        if obj.product.images:
+            return obj.product.images[0]
+
+        return None

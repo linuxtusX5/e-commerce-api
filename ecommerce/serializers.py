@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Category, Product, ProductVariant, Order, OrderItem, WishlistItem
+from .models import User, Category, Product, ProductVariant, Order, OrderItem, WishlistItem, Address
 
 class UserSerializer(serializers.ModelSerializer):
     order_count = serializers.SerializerMethodField()
@@ -223,3 +223,15 @@ class WishlistItemSerializer(serializers.ModelSerializer):
             return obj.product.images[0]
 
         return None
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = [
+            'id', 'user', 'label', 'first_name', 'last_name', 'line1', 'line2', 'city', 'state', 'postal_code', 'country', 'phone', 'is_default', 'created_at', 'updated_at',
+        ]
+
+        read_only_fields = [
+            'id', 'user', 'created_at', 'updated_at',
+        ]

@@ -2,8 +2,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import viewsets, status, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from .models import User, Category, Product, ProductVariant, Order, WishlistItem
-from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer, WishlistItemSerializer
+from .models import User, Category, Product, ProductVariant, Order, WishlistItem, Address
+from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer, WishlistItemSerializer, AddressSerializer
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -114,3 +114,57 @@ class WishlistItemViewSet(viewsets.ModelViewSet):
         serializer.save(
             user=self.request.user
         )
+
+
+class AddressViewSet(viewsets.ModelViewSet):
+    serializer_class = AddressSerializer
+    permission_classes = [IsAuthenticated]
+
+    queryset = Address.objects.all()
+
+    filter_backends = [ filters.SearchFilter, filters.OrderingFilter, ]
+
+    filterset_fields = [
+        'is_default', 'country', 'state', 'city',
+    ]
+
+    search_fields = [
+        'label', 'first_name', 'last_name', 'line1', 'city', 'state', 'postal_code', 'phone',
+    ]
+
+    ordering_fields = [
+        'created_at', 'updated_at', 'is_default', 'city',
+    ]
+
+    ordering = ['-is_default', '-created_at']
+
+    def get_queryset(self):
+        return Address.objects.filter(
+            user=self.request.user
+        )
+
+    def perform_create(self, serializer):
+        if serializer.validated_data.get('is_default', False):
+            Address.objects.filter(
+                user=self.request.user,
+                is_default=True
+            ).update(
+                is_default=False
+            )
+
+        serializer.save(
+            user=self.request.user
+        )
+
+    def perform_update(self, serializer):
+        if serializer.validated_data.get('is_default', False):
+            Address.objects.filter(
+                user=self.request.user,
+                is_default=True
+            ).exclude(
+                id=self.get_object().id
+            ).update(
+                is_default=False
+            )
+
+        serializer.save()

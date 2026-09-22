@@ -8,6 +8,7 @@ router.register(r'products', views.ProductViewSet)
 router.register(r'variants', views.ProductVariantViewSet, basename='variant')
 router.register(r'orders', views.OrderViewSet, basename='order')
 router.register(r'wishlist', views.WishlistItemViewSet, basename='wishlist')
+router.register(r'addresses', views.AddressViewSet, basename='address')
 
 urlpatterns = [
     path('auth/register/', views.register_user, name='register'),

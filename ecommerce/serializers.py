@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Category, Product, ProductVariant, Order, OrderItem, WishlistItem, Address
+from .models import User, Category, Product, ProductVariant, Order, OrderItem, WishlistItem, Address, Review
 
 class UserSerializer(serializers.ModelSerializer):
     order_count = serializers.SerializerMethodField()
@@ -235,3 +235,35 @@ class AddressSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'user', 'created_at', 'updated_at',
         ]
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(
+        source='user.name',
+        read_only=True
+    )
+
+    product_name = serializers.CharField(
+        source='product.name',
+        read_only=True
+    )
+
+    class Meta:
+        model = Review
+        fields = [
+            'id', 'user', 'user_name', 'product', 'product_name', 'rating', 'title', 'body', 'created_at', 'updated_at',
+        ]
+
+        read_only_fields = [
+            'id', 'user', 'user_name', 'product_name', 'created_at', 'updated_at',
+        ]
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError(
+                'Rating must be between 1 and 5.'
+            )
+
+        return value
+
+

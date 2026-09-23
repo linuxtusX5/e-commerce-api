@@ -2,8 +2,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import viewsets, status, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from .models import User, Category, Product, ProductVariant, Order, WishlistItem, Address
-from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer, WishlistItemSerializer, AddressSerializer
+from .models import User, Category, Product, ProductVariant, Order, WishlistItem, Address, Review
+from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer, WishlistItemSerializer, AddressSerializer, ReviewSerializer
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -168,3 +168,50 @@ class AddressViewSet(viewsets.ModelViewSet):
             )
 
         serializer.save()
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    queryset = Review.objects.select_related('user', 'product').all()
+
+    filter_backends = [
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = [
+        'product', 'rating', 'user',
+    ]
+
+    search_fields = [
+        'title', 'body', 'user__name', 'product__name',
+    ]
+
+    ordering_fields = [
+        'rating', 'created_at', 'updated_at',
+    ]
+
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return self.queryset
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def perform_update(self, serializer):
+        review = self.get_object()
+        
+        if review.user != self.request.user:
+            raise PermissionDenied('You can only update your own reviews.')
+
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.user != self.request.user:
+            raise PermissionDenied('You can only delete your own reviews.')
+
+        instance.delete()
+

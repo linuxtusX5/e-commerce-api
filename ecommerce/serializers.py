@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import User, Category, Product, ProductVariant, Order, OrderItem, WishlistItem, Address, Review
+from django.utils import timezone
+from .models import User, Category, Product, ProductVariant, Order, OrderItem, WishlistItem, Address, Review, Coupon
 
 class UserSerializer(serializers.ModelSerializer):
     order_count = serializers.SerializerMethodField()
@@ -265,5 +266,63 @@ class ReviewSerializer(serializers.ModelSerializer):
             )
 
         return value
+
+
+class CouponSerializer(serializers.ModelSerializer):
+    is_valid = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Coupon
+        fields = [
+            'id', 'code', 'type', 'value', 'min_order', 'max_uses', 'used_count', 'expires_at', 'active', 'is_valid', 'created_at',
+        ]
+
+        read_only_fields = [
+            'id', 'used_count', 'is_valid', 'created_at',
+        ]
+
+    def validate_code(self, value):
+        return value.upper().strip()
+
+    def validate(self, attrs):
+        coupon_type = attrs.get(
+            'type',
+            getattr(self.instance, 'type', None)
+        )
+
+        value = attrs.get(
+            'value',
+            getattr(self.instance, 'value', None)
+        )
+
+        if coupon_type == 'PERCENTAGE' and value > 100:
+            raise serializers.ValidationError({
+                'value': 'Percentage discount cannot exceed 100.'
+            })
+
+        if value is not None and value < 0:
+            raise serializers.ValidationError({
+                'value': 'Discount value cannot be negative.'
+            })
+
+        return attrs
+
+    def get_is_valid(self, obj):
+        if not obj.active:
+            return False
+
+        if (
+            obj.expires_at is not None
+            and obj.expires_at <= timezone.now()
+        ):
+            return False
+
+        if (
+            obj.max_uses is not None
+            and obj.used_count >= obj.max_uses
+        ):
+            return False
+
+        return True
 
 

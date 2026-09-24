@@ -2,8 +2,9 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import viewsets, status, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from .models import User, Category, Product, ProductVariant, Order, WishlistItem, Address, Review
-from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer, WishlistItemSerializer, AddressSerializer, ReviewSerializer
+from .models import User, Category, Product, ProductVariant, Order, WishlistItem, Address, Review, Coupon
+from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer, WishlistItemSerializer, AddressSerializer, ReviewSerializer, CouponSerializer
+from rest_framework.exceptions import PermissionDenied
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -212,6 +213,58 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         if instance.user != self.request.user:
             raise PermissionDenied('You can only delete your own reviews.')
+
+        instance.delete()
+
+
+class CouponViewSet(viewsets.ModelViewSet):
+    queryset = Coupon.objects.all()
+    serializer_class = CouponSerializer
+    permission_classes = [IsAuthenticated]
+
+    filter_backends = [
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = [
+        'type', 'active',
+    ]
+
+    search_fields = [
+        'code',
+    ]
+
+    ordering_fields = [
+        'created_at', 'expires_at', 'value', 'used_count',
+    ]
+
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return self.queryset
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_staff:
+            raise PermissionDenied(
+                'Only staff users can create coupons.'
+            )
+
+        serializer.save()
+
+    def perform_update(self, serializer):
+        if not self.request.user.is_staff:
+            raise PermissionDenied(
+                'Only staff users can update coupons.'
+            )
+
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if not self.request.user.is_staff:
+            raise PermissionDenied(
+                'Only staff users can delete coupons.'
+            )
 
         instance.delete()
 

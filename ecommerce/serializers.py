@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import User, Category, Product, ProductVariant, Order, OrderItem, WishlistItem, Address, Review, Coupon
+from .models import User, Category, Product, ProductVariant, Order, OrderItem, WishlistItem, Address, Review, Coupon, CartItem
 
 class UserSerializer(serializers.ModelSerializer):
     order_count = serializers.SerializerMethodField()
@@ -326,3 +326,99 @@ class CouponSerializer(serializers.ModelSerializer):
         return True
 
 
+class CartItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(
+        source='product.name',
+        read_only=True
+    )
+
+    product_price = serializers.DecimalField(
+        source='product.price',
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
+
+    product_image = serializers.SerializerMethodField()
+
+    variant_size = serializers.CharField(
+        source='variant.size',
+        read_only=True
+    )
+
+    variant_color = serializers.CharField(
+        source='variant.color',
+        read_only=True
+    )
+
+    variant_price = serializers.DecimalField(
+        source='variant.price',
+        max_digits=10,
+        decimal_places=2,
+        read_only=True
+    )
+
+    subtotal = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CartItem
+        fields = [
+            'id', 'user', 'product', 'product_name', 'product_price', 'product_image', 'variant', 'variant_size', 'variant_color', 'variant_price', 'quantity', 'subtotal',
+        ]
+
+        read_only_fields = [
+            'id', 'user', 'product_name', 'product_price', 'product_image', 'variant_size', 'variant_color', 'variant_price', 'subtotal',
+        ]
+
+    def validate_quantity(self, value):
+        if value < 1:
+            raise serializers.ValidationError(
+                'Quantity must be at least 1.'
+            )
+
+        return value
+
+    def validate(self, attrs):
+        product = attrs.get('product')
+        variant = attrs.get('variant')
+        quantity = attrs.get('quantity', 1)
+
+        if variant:
+            if variant.product_id != product.id:
+                raise serializers.ValidationError({
+                    'variant': (
+                        'This variant does not belong '
+                        'to the selected product.'
+                    )
+                })
+
+            if quantity > variant.stock:
+                raise serializers.ValidationError({
+                    'quantity': (
+                        f"Only {variant.stock} items are available."
+                    )
+                })
+
+        else:
+            if quantity > product.stock:
+                raise serializers.ValidationError({
+                    'quantity': (
+                        f"Only {product.stock} items are available."
+                    )
+                })
+
+        return attrs
+
+    def get_product_image(self, obj):
+        if obj.product.images:
+            return obj.product.images[0]
+
+        return None
+
+    def get_subtotal(self, obj):
+        if obj.variant and obj.variant.price is not None:
+            price = obj.variant.price
+        else:
+            price = obj.product.price
+
+        return price * obj.quantity

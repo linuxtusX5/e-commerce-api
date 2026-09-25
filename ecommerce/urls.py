@@ -11,6 +11,7 @@ router.register(r'wishlist', views.WishlistItemViewSet, basename='wishlist')
 router.register(r'addresses', views.AddressViewSet, basename='address')
 router.register(r'reviews', views.ReviewViewSet, basename='review')
 router.register(r'coupons', views.CouponViewSet, basename='coupon')
+router.register(r'cart', views.CartItemViewSet, basename='cart')
 
 urlpatterns = [
     path('auth/register/', views.register_user, name='register'),

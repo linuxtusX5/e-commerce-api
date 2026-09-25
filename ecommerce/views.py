@@ -2,8 +2,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import viewsets, status, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from .models import User, Category, Product, ProductVariant, Order, WishlistItem, Address, Review, Coupon
-from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer, WishlistItemSerializer, AddressSerializer, ReviewSerializer, CouponSerializer
+from .models import User, Category, Product, ProductVariant, Order, WishlistItem, Address, Review, Coupon, CartItem
+from .serializers import UserSerializer, RegisterSerializer, CategorySerializer, ProductSerializer, ProductVariantSerializer, OrderSerializer, WishlistItemSerializer, AddressSerializer, ReviewSerializer, CouponSerializer, CartItemSerializer
 from rest_framework.exceptions import PermissionDenied
 
 @api_view(['POST'])
@@ -268,3 +268,36 @@ class CouponViewSet(viewsets.ModelViewSet):
 
         instance.delete()
 
+
+class CartItemViewSet(viewsets.ModelViewSet):
+    serializer_class = CartItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    queryset = CartItem.objects.select_related( 'user', 'product', 'variant' ).all()
+
+    filter_backends = [
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = [
+        'product', 'variant',
+    ]
+
+    search_fields = [
+        'product__name', 'product__slug', 'variant__size', 'variant__color',
+    ]
+
+    ordering_fields = [
+        'quantity',
+    ]
+
+    def get_queryset(self):
+        return self.queryset.filter(
+            user=self.request.user
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(
+            user=self.request.user
+        )
